@@ -122,3 +122,55 @@ FlowForge follows a distributed architecture in which workflow management, execu
 * **Workers:** Execute individual workflow tasks and report their results.
 * **PostgreSQL:** Stores workflow definitions, versions, execution state, task state, users, organizations, and audit data.
 * **Authentication & Authorization:** Controls access to organizations, workflows, executions, and credentials.
+
+
+
+## 7. How the System Works
+
+1. **Define Workflow**
+   A developer creates a workflow using the visual builder or REST API and publishes a workflow version.
+
+2. **Receive Trigger**
+   The workflow is triggered through a REST request, webhook, schedule, manual execution, or supported event source.
+
+3. **Create Execution**
+   FlowForge creates a unique execution instance associated with the published workflow version and persists its initial state.
+
+4. **Schedule Tasks**
+   The execution engine determines the next executable node and publishes the task to Kafka.
+
+5. **Execute Task**
+   An available worker consumes the task and executes the corresponding generic node executor.
+
+6. **Persist Result**
+   The worker reports the result, and FlowForge persists the node state, output, attempt count, and execution status.
+
+7. **Determine Next Step**
+   The execution engine evaluates the workflow graph and determines the next node or branch based on the result.
+
+8. **Handle Failures**
+   Failed tasks follow their configured retry policy. After retries are exhausted, the workflow can stop, follow a failure path, or execute configured compensation actions.
+
+9. **Recover Interrupted Executions**
+   If a worker or system fails, persisted execution state allows FlowForge to identify incomplete tasks and safely resume execution.
+
+10. **Complete Execution**
+    Once all required nodes finish successfully, the execution is marked as `COMPLETED` and its execution history remains available for monitoring and auditing.
+
+
+
+## 8. Technology Stack
+
+| Layer                  | Technology          |
+| ---------------------- | ------------------- |
+| Backend                | Java, Spring Boot   |
+| API                    | REST                |
+| Frontend               | React               |
+| Database               | PostgreSQL          |
+| Messaging              | Apache Kafka        |
+| Caching & Coordination | Redis               |
+| Build Tool             | Maven               |
+| Containerization       | Docker              |
+| Orchestration          | Kubernetes          |
+| Monitoring             | Prometheus, Grafana |
+| Version Control        | Git, GitHub         |
