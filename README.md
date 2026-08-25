@@ -16,3 +16,25 @@ As applications grow, business processes often evolve from simple operations int
 Over time, this can lead to tightly coupled and difficult-to-maintain code, where even a small change in a business process requires modifying and redeploying the core application. Handling failures, retries, long-running operations, and recovery from system failures also adds significant complexity to the application.
 
 There is a need for a reliable and flexible system that separates workflow orchestration from core application logic while allowing developers to define, modify, monitor, and execute complex workflows without repeatedly implementing the orchestration logic from scratch.
+
+
+## 3. Proposed Solution
+
+FlowForge provides a centralized workflow orchestration layer that separates complex business-process orchestration from an application's core codebase.
+
+Developers can define workflows as configurable graphs of interconnected nodes, where each node represents a generic operation such as an HTTP request, condition, delay, database operation, notification, or approval. Workflows can be created through the visual workflow builder or programmatically through REST APIs.
+
+When an application generates a configured event, FlowForge creates a workflow execution and executes the required nodes through its distributed execution engine. The platform persists execution state, manages dependencies and conditional branching, and coordinates tasks across distributed workers.
+
+FlowForge also provides built-in reliability mechanisms such as configurable retry policies, timeouts, failure handling, compensation, idempotency, and execution recovery. This allows workflows to continue from their persisted state after worker or system failures without requiring developers to implement these orchestration and recovery mechanisms repeatedly within their applications.
+
+
+## 4. Goals & Objectives
+
+* **Decouple orchestration:** Keep complex workflow logic separate from the application's core business logic.
+* **Reliable execution:** Ensure workflows can handle failures, retries, delays, and unexpected worker or system failures.
+* **Flexible workflows:** Support conditional, sequential, parallel, and long-running workflow execution.
+* **Scalable execution:** Execute workflows across multiple distributed workers and scale execution independently.
+* **Extensibility:** Provide a generic execution framework that can support new node types, triggers, and integrations.
+* **Observability:** Provide clear visibility into workflow executions, task states, failures, retries, and execution history.
+* **Developer-focused experience:** Make workflows easy to define, integrate, version, monitor, and manage through APIs and a visual builder.
