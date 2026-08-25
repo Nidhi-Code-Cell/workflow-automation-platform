@@ -38,3 +38,87 @@ FlowForge also provides built-in reliability mechanisms such as configurable ret
 * **Extensibility:** Provide a generic execution framework that can support new node types, triggers, and integrations.
 * **Observability:** Provide clear visibility into workflow executions, task states, failures, retries, and execution history.
 * **Developer-focused experience:** Make workflows easy to define, integrate, version, monitor, and manage through APIs and a visual builder.
+
+
+
+## 5. Key Features
+
+* **Visual Workflow Builder** — Create workflows using a drag-and-drop interface.
+* **Workflow APIs** — Create, update, publish, and manage workflows programmatically.
+* **Multiple Triggers** — Start workflows through REST/webhooks, schedules, manual execution, and event streams.
+* **Generic Node System** — Support reusable nodes such as HTTP requests, conditions, delays, database operations, notifications, transformations, and approvals.
+* **Conditional & Parallel Execution** — Support branching and parallel workflow paths.
+* **Workflow Versioning** — Maintain immutable published versions while allowing new versions to be developed independently.
+* **Configurable Retries** — Define retry attempts, delays, and backoff strategies per task.
+* **Failure Handling & Compensation** — Stop execution, follow failure paths, or execute compensation actions after failures.
+* **Long-Running Workflows** — Support workflows that remain active across delays and extended execution periods.
+* **Fault Recovery** — Persist execution state and recover interrupted workflows after worker or system failures.
+* **Distributed Workers** — Execute workflow tasks across multiple workers for scalability.
+* **Execution Monitoring** — Track workflow and task status, attempts, failures, outputs, and execution history.
+* **Multi-Tenant Security** — Isolate organizations, users, workflows, executions, and credentials.
+* **Secure Credential Management** — Store and access integration credentials through a dedicated credential system without exposing secrets in workflows or logs.
+
+
+
+
+## 6. System Architecture
+
+FlowForge follows a distributed architecture in which workflow management, execution coordination, task processing, and persistence are separated into distinct components.
+
+```text
+                         ┌──────────────────────┐
+                         │   React Web Client   │
+                         │  Visual Workflow UI  │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │    FlowForge API     │
+                         │     Spring Boot      │
+                         └──────────┬───────────┘
+                                    │
+                 ┌──────────────────┼──────────────────┐
+                 │                  │                  │
+                 ▼                  ▼                  ▼
+        ┌────────────────┐ ┌────────────────┐ ┌────────────────┐
+        │ Workflow       │ │ Execution      │ │ Authentication │
+        │ Management     │ │ Engine         │ │ & Authorization│
+        └───────┬────────┘ └───────┬────────┘ └────────────────┘
+                │                  │
+                └──────────┬───────┘
+                           ▼
+                    ┌───────────────┐
+                    │  PostgreSQL   │
+                    │ Persistent    │
+                    │ State & Data  │
+                    └───────────────┘
+                           ▲
+                           │
+                    ┌──────┴───────┐
+                    │    Kafka     │
+                    │ Task/Event   │
+                    │   Broker     │
+                    └──────┬───────┘
+                           │
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+        ┌─────────┐   ┌─────────┐   ┌─────────┐
+        │ Worker  │   │ Worker  │   │ Worker  │
+        │    1    │   │    2    │   │    3    │
+        └────┬────┘   └────┬────┘   └────┬────┘
+             │             │             │
+             └─────────────┼─────────────┘
+                           ▼
+                  External Services
+```
+
+### Core Components
+
+* **React Web Client:** Provides the visual workflow builder and execution monitoring interface.
+* **FlowForge API:** Exposes REST APIs for workflow management, execution, authentication, and integration.
+* **Workflow Management:** Handles workflow definitions, nodes, connections, and versions.
+* **Execution Engine:** Determines workflow state, schedules tasks, evaluates conditions, and coordinates execution.
+* **Kafka:** Provides asynchronous task and event communication between the execution engine and workers.
+* **Workers:** Execute individual workflow tasks and report their results.
+* **PostgreSQL:** Stores workflow definitions, versions, execution state, task state, users, organizations, and audit data.
+* **Authentication & Authorization:** Controls access to organizations, workflows, executions, and credentials.
