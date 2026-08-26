@@ -174,3 +174,83 @@ FlowForge follows a distributed architecture in which workflow management, execu
 | Orchestration          | Kubernetes          |
 | Monitoring             | Prometheus, Grafana |
 | Version Control        | Git, GitHub         |
+
+
+
+## 9. Project Structure
+
+FlowForge follows a **feature-based package structure**, where code is organized around business capabilities rather than technical layers. This keeps related functionality together and makes the system easier to maintain and extend as the platform grows.
+
+```text
+src/
+└── main/
+    └── java/
+        └── com/
+            └── flowforge/
+                ├── workflow/
+                │   ├── controller/
+                │   ├── service/
+                │   ├── repository/
+                │   ├── entity/
+                │   └── dto/
+                │
+                ├── execution/
+                │   ├── controller/
+                │   ├── service/
+                │   ├── repository/
+                │   ├── entity/
+                │   └── dto/
+                │
+                ├── trigger/
+                │   ├── rest/
+                │   ├── schedule/
+                │   ├── manual/
+                │   └── kafka/
+                │
+                ├── worker/
+                │   ├── consumer/
+                │   ├── executor/
+                │   ├── heartbeat/
+                │   └── model/
+                │
+                ├── credential/
+                │   ├── controller/
+                │   ├── service/
+                │   ├── repository/
+                │   ├── entity/
+                │   └── encryption/
+                │
+                ├── authentication/
+                │   ├── controller/
+                │   ├── service/
+                │   ├── security/
+                │   ├── entity/
+                │   └── dto/
+                │
+                ├── organization/
+                │   ├── controller/
+                │   ├── service/
+                │   ├── repository/
+                │   ├── entity/
+                │   └── dto/
+                │
+                └── common/
+                    ├── exception/
+                    ├── response/
+                    ├── validation/
+                    ├── util/
+                    └── constant/
+```
+
+### Module Responsibilities
+
+| Module           | Responsibility                                                         |
+| ---------------- | ---------------------------------------------------------------------- |
+| `workflow`       | Workflow definitions, nodes, edges, validation, and versioning         |
+| `execution`      | Workflow execution, state management, retries, branching, and recovery |
+| `trigger`        | REST, scheduled, manual, and Kafka-based workflow triggers             |
+| `worker`         | Task consumption, node execution, result reporting, and worker health  |
+| `credential`     | Secure credential storage, encryption, access, and auditing            |
+| `authentication` | User authentication and authorization                                  |
+| `organization`   | Organizations, members, roles, and tenant isolation                    |
+| `common`         | Shared exceptions, utilities, validation, responses, and constants     |
