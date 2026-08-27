@@ -254,3 +254,165 @@ src/
 | `authentication` | User authentication and authorization                                  |
 | `organization`   | Organizations, members, roles, and tenant isolation                    |
 | `common`         | Shared exceptions, utilities, validation, responses, and constants     |
+
+
+
+## 10. Database Design
+
+FlowForge uses **PostgreSQL** as its primary relational database and follows a domain-oriented design that separates workflow definitions, execution state, organizational data, and security-related information. The database is designed to support multi-tenancy, workflow versioning, distributed execution, failure recovery, and execution tracking while maintaining clear relationships between the different components of the platform.
+
+```text
+Organization
+    │
+    ├── Users / Members
+    ├── API Keys
+    ├── Credentials
+    └── Workflows
+          │
+          ├── Workflow Triggers
+          └── Workflow Versions
+                │
+                ├── Workflow Nodes
+                └── Workflow Edges
+                      │
+                      ▼
+               Workflow Executions
+                      │
+                      ▼
+                Node Executions
+
+Workers
+    │
+    └── Execute workflow tasks
+
+Audit Logs
+    │
+    └── Track important system and security actions
+```
+
+### Entity Responsibilities
+
+| Entity                 | Responsibility                                                                            |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `organizations`        | Stores organizations using FlowForge and provides the tenant boundary for their resources |
+| `users`                | Stores FlowForge user accounts and authentication-related information                     |
+| `organization_members` | Associates users with organizations and defines their roles and permissions               |
+| `api_keys`             | Stores securely hashed API keys used by external applications to access FlowForge         |
+| `workflows`            | Represents the logical workflow and its metadata                                          |
+| `workflow_versions`    | Maintains immutable versions of workflow definitions                                      |
+| `workflow_triggers`    | Defines how and when a workflow can be started                                            |
+| `workflow_nodes`       | Stores the individual nodes belonging to a workflow version                               |
+| `workflow_edges`       | Defines the connections and execution paths between workflow nodes                        |
+| `workflow_executions`  | Represents an individual execution of a specific workflow version                         |
+| `node_executions`      | Tracks the runtime state, attempts, results, and failures of individual nodes             |
+| `credentials`          | Stores encrypted credentials required by workflow integrations                            |
+| `workers`              | Tracks distributed worker instances and their health status                               |
+| `audit_logs`           | Records important security, administrative, and workflow-related actions                  |
+
+
+## 11. API Documentation
+
+
+FlowForge exposes a versioned REST API for managing workflows, executions, triggers, credentials, organizations, and other platform resources. The API follows standard HTTP methods and returns consistent JSON responses. Protected APIs use JWT-based authentication, while application-to-FlowForge integrations can use organization-specific API keys.
+
+### API Base URL
+
+```text
+/api/v1
+
+
+| Resource    | Method   | Endpoint                                             | Purpose                       |
+| ----------- | -------- | ---------------------------------------------------- | ----------------------------- |
+| Workflows   | `POST`   | `/workflows`                                         | Create a workflow             |
+| Workflows   | `GET`    | `/workflows`                                         | List workflows                |
+| Workflows   | `GET`    | `/workflows/{workflowId}`                            | Get workflow details          |
+| Workflows   | `PUT`    | `/workflows/{workflowId}`                            | Update a workflow             |
+| Workflows   | `DELETE` | `/workflows/{workflowId}`                            | Delete a workflow             |
+| Versions    | `POST`   | `/workflows/{workflowId}/versions`                   | Create a new workflow version |
+| Versions    | `GET`    | `/workflows/{workflowId}/versions`                   | List workflow versions        |
+| Versions    | `GET`    | `/workflows/{workflowId}/versions/{version}`         | Get a specific version        |
+| Versions    | `POST`   | `/workflows/{workflowId}/versions/{version}/publish` | Publish a workflow version    |
+| Executions  | `POST`   | `/workflows/{workflowId}/execute`                    | Start a workflow execution    |
+| Executions  | `GET`    | `/executions/{executionId}`                          | Get execution status          |
+| Executions  | `GET`    | `/executions`                                        | List executions               |
+| Executions  | `POST`   | `/executions/{executionId}/cancel`                   | Cancel an execution           |
+| Triggers    | `POST`   | `/workflows/{workflowId}/triggers`                   | Create a workflow trigger     |
+| Triggers    | `GET`    | `/workflows/{workflowId}/triggers`                   | List workflow triggers        |
+| Triggers    | `PUT`    | `/triggers/{triggerId}`                              | Update a trigger              |
+| Triggers    | `DELETE` | `/triggers/{triggerId}`                              | Delete a trigger              |
+| Credentials | `POST`   | `/credentials`                                       | Create a credential           |
+| Credentials | `GET`    | `/credentials`                                       | List credentials              |
+| Credentials | `GET`    | `/credentials/{credentialId}`                        | Get credential metadata       |
+| Credentials | `PUT`    | `/credentials/{credentialId}`                        | Update a credential           |
+| Credentials | `DELETE` | `/credentials/{credentialId}`                        | Delete a credential           |
+```
+
+
+## 12. Authentication & Authorization
+
+FlowForge uses **JWT-based authentication** for user access and **API keys** for application-to-FlowForge integrations. Authorization is managed through role-based access control (RBAC), while organization-level isolation ensures that users can access only the resources belonging to their organization.
+
+### Authentication
+
+- **User Authentication:** Users authenticate using their credentials and receive a JWT access token.
+- **API Authentication:** External applications use organization-specific API keys to interact with FlowForge.
+- **Password Security:** User passwords are stored only as secure hashes and are never persisted in plain text.
+
+### Authorization
+
+FlowForge uses role-based access control with the following initial roles:
+
+| Role | Permissions |
+|---|---|
+| `ADMIN` | Manage organization members, workflows, credentials, and platform settings |
+| `DEVELOPER` | Create, modify, publish, execute, and monitor workflows |
+| `VIEWER` | View workflows and execution history without modification access |
+
+### Multi-Tenant Access Control
+
+Every organization-owned resource is associated with an organization. Before processing a request, FlowForge verifies both the user's identity and their membership and permissions within the requested organization.
+
+```text
+Request
+   ↓
+Authentication
+   ↓
+Identify User & Organization
+   ↓
+Check Role & Permission
+   ↓
+Access Resource
+```
+
+
+## 13. Error Handling
+
+FlowForge uses a consistent error-handling strategy across APIs, workflow execution, and distributed task processing. Errors are classified, persisted, and handled according to their type and the configuration of the affected workflow or node.
+
+### API Errors
+
+REST APIs return standardized error responses containing an error code, message, and relevant details.
+
+```json
+{
+  "error": {
+    "code": "WORKFLOW_NOT_FOUND",
+    "message": "Workflow does not exist"
+  }
+}
+```
+### Workflow Errors
+
+Node-level failures are recorded against the corresponding execution. Based on the configured retry policy, FlowForge can retry the task, follow a failure path, execute compensation actions, or mark the workflow as failed.
+
+### System Failures
+
+Worker crashes, service interruptions, and unexpected failures are handled through persisted execution state and task recovery mechanisms. Interrupted tasks can be detected and reprocessed without restarting the entire workflow.
+
+### Error Logging
+
+Errors are logged with sufficient context for debugging and monitoring while preventing sensitive information such as credentials, API keys, and other secrets from being exposed in logs.
+
+
+
+
